@@ -39,6 +39,12 @@ static const uint64_t s_default_ping_timeout_ns = 3000000000;
 /* 20 minutes - This is the default (and max) for AWS IoT as of 2020.02.18 */
 static const uint16_t s_default_keep_alive_sec = 1200;
 
+/* default reconnection max time out: 128 second */
+static const uint64_t s_default_reconnection_max_timeout_sec = 128;
+
+/* default reconnection min time out: 1 second */
+static const uint64_t s_default_reconnection_min_timeout_sec = 1;
+
 static int s_mqtt_client_connect(
     struct aws_mqtt_client_connection *connection,
     aws_mqtt_client_on_connection_complete_fn *on_connection_complete,
@@ -786,8 +792,8 @@ struct aws_mqtt_client_connection *aws_mqtt_client_connection_new(struct aws_mqt
     connection->client = aws_mqtt_client_acquire(client);
     AWS_ZERO_STRUCT(connection->synced_data);
     connection->synced_data.state = AWS_MQTT_CLIENT_STATE_DISCONNECTED;
-    connection->reconnect_timeouts.min = 1;
-    connection->reconnect_timeouts.max = 128;
+    connection->reconnect_timeouts.min = s_default_reconnection_min_timeout_sec;
+    connection->reconnect_timeouts.max = s_default_reconnection_max_timeout_sec;
     aws_linked_list_init(&connection->synced_data.pending_requests_list);
     aws_linked_list_init(&connection->thread_data.ongoing_requests_list);
 
