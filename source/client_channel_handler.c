@@ -110,14 +110,6 @@ static int s_packet_handler_connack(
     uint64_t now = 0;
     aws_high_res_clock_get_ticks(&now);
 
-    /*
-     * Only reset the duration of the reconnect timer to min if this connect is happening past
-     * the previously set next_attempt_reset_timer value. The next reset value will be 10 seconds after the next
-     * connection attempt
-     */
-    if (connection->reconnect_timeouts.next_attempt_reset_timer_ns < now) {
-        connection->reconnect_timeouts.current_sec = connection->reconnect_timeouts.min_sec;
-    }
     connection->reconnect_timeouts.next_attempt_reset_timer_ns =
         now + 10000000000 +
         aws_timestamp_convert(

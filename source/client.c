@@ -352,6 +352,17 @@ static void s_mqtt_client_shutdown(
             } /* END CRITICAL SECTION */
 
             if (!stop_reconnect) {
+                /*
+                * Only reset the duration of the reconnect timer to min if this connect is happening past
+                * the previously set next_attempt_reset_timer value. The next reset value will be 10 seconds after the next
+                * connection attempt
+                */
+                uint64_t now = 0;
+                aws_high_res_clock_get_ticks(&now);
+                if (connection->reconnect_timeouts.next_attempt_reset_timer_ns < now) {
+                    connection->reconnect_timeouts.current_sec = connection->reconnect_timeouts.min_sec;
+                }
+
                 s_aws_mqtt_schedule_reconnect_task(connection);
             }
             break;
@@ -635,15 +646,6 @@ static void s_attempt_reconnect(struct aws_task *task, void *userdata, enum aws_
         } else {
             connection->reconnect_timeouts.current_sec *= 2;
         }
-
-        /* Apply updated reconnect_timeout to next_attempt_reset_timer_ns to prevent premature reset to min
-         * of min reconnect on a successful connect after a prolonged period of failed connections */
-        uint64_t now = 0;
-        aws_high_res_clock_get_ticks(&now);
-        connection->reconnect_timeouts.next_attempt_reset_timer_ns =
-            now + 10000000000 +
-            aws_timestamp_convert(
-                connection->reconnect_timeouts.current_sec, AWS_TIMESTAMP_SECS, AWS_TIMESTAMP_NANOS, NULL);
 
         mqtt_connection_unlock_synced_data(connection);
 
